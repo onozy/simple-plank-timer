@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12141a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="プランク">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<title>プランクタイマー</title>
+<style>
+  :root{
+    --bg:#12141a; --card:#1b1e26; --ink:#f2f4f8; --muted:#9aa3b2;
+    --accent:#5eead4; --rest:#fbbf24; --ready:#818cf8; --done:#34d399; --line:#2a2f3a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    -webkit-user-select:none;user-select:none}
+  body{min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+    padding:calc(12px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));gap:16px}
+  h1{font-size:17px;font-weight:600;letter-spacing:.04em;margin:2px 0 0;color:var(--muted)}
+
+  .tabs{display:flex;width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:4px;gap:4px}
+  .tabs button{flex:1;background:transparent;border:none;color:var(--muted);font-size:14px;font-weight:600;
+    padding:9px 0;border-radius:9px;cursor:pointer;font-family:inherit}
+  .tabs button.on{background:#252a35;color:var(--ink)}
+  .view{display:none;width:100%;flex-direction:column;align-items:center;gap:16px}
+  .view.on{display:flex}
+
+  .settings{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);
+    border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .row .lbl{font-size:13px;color:var(--muted)}
+  .seg{display:flex;gap:6px}
+  .seg button{background:#252a35;border:1px solid var(--line);color:var(--ink);
+    font-size:14px;padding:8px 13px;border-radius:10px;cursor:pointer;font-variant-numeric:tabular-nums;font-family:inherit}
+  .seg button.on{background:var(--accent);border-color:var(--accent);color:#0d1117;font-weight:700}
+
+  .stage{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .dial{position:relative;width:min(76vw,300px);aspect-ratio:1}
+  .dial svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .track{fill:none;stroke:#242936;stroke-width:12}
+  .prog{fill:none;stroke:var(--accent);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .25s linear,stroke .3s}
+  .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .phase{font-size:15px;font-weight:600;letter-spacing:.08em;color:var(--accent);transition:color .3s}
+  .time{font-size:64px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+  .sets{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+  .controls{display:flex;gap:10px;width:100%;max-width:420px}
+  .btn{flex:1;border:none;border-radius:14px;padding:16px 0;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+  .primary{background:var(--accent);color:#0d1117}
+  .ghost{flex:0 0 100px;background:#252a35;color:var(--muted);border:1px solid var(--line);font-weight:600}
+
+  .tip{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);
+    border-radius:16px;padding:14px 16px;font-size:13px;line-height:1.75;color:var(--muted)}
+  .tip b{color:var(--ink);font-weight:600;display:block;margin-bottom:6px;font-size:13px}
+  .tip ul{margin:0;padding-left:18px}
+  .tip li{margin:2px 0}
+  .finish{color:var(--done);font-weight:700}
+  .today{font-size:13px;color:var(--done);min-height:18px}
+
+  /* calendar */
+  .cal{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 12px}
+  .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 4px}
+  .calhead b{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+  .calhead button{background:#252a35;border:1px solid var(--line);color:var(--ink);width:36px;height:36px;
+    border-radius:10px;font-size:16px;cursor:pointer}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .dow{text-align:center;font-size:11px;color:var(--muted);padding:4px 0}
+  .dow:first-child{color:#f87171}.dow:nth-child(7){color:#60a5fa}
+  .day{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-size:13px;font-variant-numeric:tabular-nums;cursor:pointer;position:relative;border:1px solid transparent}
+  .day.empty{cursor:default}
+  .day.done{background:rgba(94,234,212,.16);color:var(--accent);font-weight:700}
+  .day.today{border-color:var(--muted)}
+  .day.sel{border-color:var(--accent)}
+  .day .n{font-size:9px;color:var(--muted);margin-top:1px;line-height:1}
+  .day.done .n{color:var(--accent)}
+  .stats{display:flex;gap:8px;width:100%;max-width:420px}
+  .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 10px;text-align:center}
+  .stat .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+  .stat .k{font-size:11px;color:var(--muted);margin-top:2px}
+  .detail{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;font-size:13px}
+  .detail h3{margin:0 0 8px;font-size:14px;font-weight:600}
+  .rec{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);gap:8px}
+  .rec:first-of-type{border-top:none}
+  .rec .t{color:var(--muted);font-variant-numeric:tabular-nums}
+  .rec .x{background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px}
+  .empty-note{color:var(--muted)}
+  .addrow{display:flex;gap:8px;margin-top:10px}
+  .addrow button{flex:1;background:#252a35;border:1px solid var(--line);color:var(--ink);padding:10px;border-radius:10px;
+    font-size:13px;cursor:pointer;font-family:inherit}
+</style>
+</head>
+<body>
+
+<h1>プランクタイマー</h1>
+
+<div class="tabs">
+  <button class="on" data-tab="timer">タイマー</button>
+  <button data-tab="cal">カレンダー</button>
+</div>
+
+<!-- ===== タイマー ===== -->
+<div class="view on" id="view-timer">
+  <div class="settings">
+    <div class="row"><span class="lbl">キープ時間</span>
+      <div class="seg" id="segHold">
+        <button data-v="20">20秒</button><button data-v="30" class="on">30秒</button>
+        <button data-v="45">45秒</button><button data-v="60">60秒</button>
+      </div></div>
+    <div class="row"><span class="lbl">セット数</span>
+      <div class="seg" id="segSets">
+        <button data-v="1">1</button><button data-v="2">2</button>
+        <button data-v="3" class="on">3</button><button data-v="4">4</button>
+      </div></div>
+    <div class="row"><span class="lbl">休憩</span>
+      <div class="seg" id="segRest">
+        <button data-v="20">20秒</button><button data-v="30" class="on">30秒</button><button data-v="45">45秒</button>
+      </div></div>
+  </div>
+
+  <div class="stage">
+    <div class="dial">
+      <svg viewBox="0 0 120 120">
+        <circle class="track" cx="60" cy="60" r="52"></circle>
+        <circle class="prog" id="prog" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="0"></circle>
+      </svg>
+      <div class="center">
+        <div class="phase" id="phase">準備OK？</div>
+        <div class="time" id="time">30</div>
+        <div class="sets" id="setinfo">3セット / 30秒</div>
+      </div>
+    </div>
+    <div class="today" id="todayNote"></div>
+    <div class="controls">
+      <button class="btn primary" id="start">スタート</button>
+      <button class="btn ghost" id="reset">リセット</button>
+    </div>
+  </div>
+
+  <div class="tip">
+    <b>フォームのチェック</b>
+    <ul>
+      <li>肘は肩の真下、前腕全体で床を押す</li>
+      <li>頭・背中・お尻・かかとが一直線</li>
+      <li>お腹を薄くするイメージで下腹に力を</li>
+      <li>呼吸は止めない。ゆっくり吸って吐く</li>
+      <li>腰が痛むときは膝をついてOK</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== カレンダー ===== -->
+<div class="view" id="view-cal">
+  <div class="stats">
+    <div class="stat"><div class="v" id="stStreak">0</div><div class="k">連続日数</div></div>
+    <div class="stat"><div class="v" id="stMonth">0</div><div class="k">今月の実施日</div></div>
+    <div class="stat"><div class="v" id="stTotal">0</div><div class="k">累計（分）</div></div>
+  </div>
+  <div class="cal">
+    <div class="calhead">
+      <button id="prevM">‹</button>
+      <b id="calTitle"></b>
+      <button id="nextM">›</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="detail" id="detail"></div>
+</div>
+
+<script>
+(function(){
+  var CIRC = 2 * Math.PI * 52, READY = 5;
+  var LS_SET = 'plank.settings', LS_LOG = 'plank.log';
+
+  // ---------- storage ----------
+  function load(k, d){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
+  function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  var settings = load(LS_SET, {hold:30, sets:3, rest:30});
+  var hold = settings.hold, sets = settings.sets, rest = settings.rest;
+  var log = load(LS_LOG, []); // [{ts, date:'YYYY-MM-DD', hold, sets, rest}]
+
+  function pad(n){ return (n<10?'0':'')+n; }
+  function dkey(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function todayKey(){ return dkey(new Date()); }
+  function byDate(){ var m = {}; log.forEach(function(r){ (m[r.date] = m[r.date] || []).push(r); }); return m; }
+  function addRecord(rec){ log.push(rec); log.sort(function(a,b){ return a.ts-b.ts; }); save(LS_LOG, log); refreshToday(); renderCal(); }
+
+  // ---------- tabs ----------
+  var tabs = document.querySelectorAll('.tabs button');
+  [].forEach.call(tabs, function(b){
+    b.addEventListener('click', function(){
+      [].forEach.call(tabs, function(x){ x.classList.remove('on'); }); b.classList.add('on');
+      document.getElementById('view-timer').classList.toggle('on', b.dataset.tab==='timer');
+      document.getElementById('view-cal').classList.toggle('on', b.dataset.tab==='cal');
+      if(b.dataset.tab==='cal') renderCal();
+    });
+  });
+
+  // ---------- timer ----------
+  var elTime = document.getElementById('time'), elPhase = document.getElementById('phase'),
+      elSetInfo = document.getElementById('setinfo'), elProg = document.getElementById('prog'),
+      elStart = document.getElementById('start'), elToday = document.getElementById('todayNote');
+  var timer = null, running = false, phase = 'idle', remain = 0, total = 0, curSet = 0, endAt = 0;
+
+  var ac = null;
+  function beep(freq, dur, vol){
+    try{
+      if(!ac){ var C = window.AudioContext || window.webkitAudioContext; if(!C) return; ac = new C(); }
+      if(ac.state === 'suspended') ac.resume();
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type='sine'; o.frequency.value=freq; g.gain.value=vol||0.18;
+      o.connect(g); g.connect(ac.destination);
+      var t = ac.currentTime; o.start(t);
+      g.gain.setValueAtTime(g.gain.value, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t+(dur||0.15));
+      o.stop(t+(dur||0.15)+0.02);
+    }catch(e){}
+  }
+  function buzz(ms){ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} }
+
+  var wl = null;
+  function wakeOn(){ if('wakeLock' in navigator && !wl) navigator.wakeLock.request('screen').then(function(l){ wl=l; l.addEventListener('release', function(){ wl=null; }); }).catch(function(){}); }
+  function wakeOff(){ if(wl){ wl.release().catch(function(){}); wl=null; } }
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible' && running) wakeOn(); });
+
+  function seg(id, val, cb){
+    var box = document.getElementById(id);
+    [].forEach.call(box.querySelectorAll('button'), function(x){ x.classList.toggle('on', parseInt(x.dataset.v,10)===val); });
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      [].forEach.call(box.querySelectorAll('button'), function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); cb(parseInt(b.dataset.v,10));
+      save(LS_SET, {hold:hold, sets:sets, rest:rest}); reset();
+    });
+  }
+  seg('segHold', hold, function(v){ hold=v; });
+  seg('segSets', sets, function(v){ sets=v; });
+  seg('segRest', rest, function(v){ rest=v; });
+
+  function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  function paint(){
+    elTime.textContent = remain;
+    var frac = total>0 ? remain/total : 1;
+    elProg.style.strokeDashoffset = String(CIRC*(1-frac));
+    var color = phase==='rest'?getCss('--rest'):phase==='ready'?getCss('--ready'):phase==='done'?getCss('--done'):getCss('--accent');
+    elProg.style.stroke = color; elPhase.style.color = color;
+  }
+  function setLabels(){
+    elPhase.textContent = phase==='ready'?'よーい':phase==='hold'?'キープ！':phase==='rest'?'休憩':phase==='done'?'おつかれさま':'準備OK？';
+    elPhase.classList.toggle('finish', phase==='done');
+    if(phase==='hold'||phase==='rest') elSetInfo.textContent = curSet+' / '+sets+' セット目';
+    else if(phase==='done') elSetInfo.textContent = sets+'セット完了 🎉';
+    else elSetInfo.textContent = sets+'セット / '+hold+'秒';
+  }
+  function goto(p, secs){ phase=p; remain=secs; total=secs; endAt = Date.now()+secs*1000; setLabels(); paint(); }
+
+  function tick(){
+    // 実時間ベース（バックグラウンドでの遅れを補正）
+    var r = Math.ceil((endAt - Date.now())/1000);
+    if(r === remain) return;
+    remain = r;
+    if(remain>0 && remain<=3) beep(760, 0.1);
+    if(remain<=0){
+      if(phase==='ready'){ curSet=1; beep(1000,0.3,0.22); buzz(120); goto('hold', hold); }
+      else if(phase==='hold'){
+        if(curSet>=sets){
+          beep(1200,0.5,0.25); buzz([120,80,220]); goto('done',0); stop(); elStart.textContent='もう一度';
+          addRecord({ts:Date.now(), date:todayKey(), hold:hold, sets:sets, rest:rest});
+        } else { beep(520,0.3,0.2); buzz(80); goto('rest', rest); }
+      }
+      else if(phase==='rest'){ curSet++; beep(1000,0.3,0.22); buzz(120); goto('hold', hold); }
+      return;
+    }
+    paint();
+  }
+  function stop(){ clearInterval(timer); timer=null; running=false; wakeOff(); }
+  function reset(){ stop(); phase='idle'; curSet=0; remain=hold; total=hold; elStart.textContent='スタート'; setLabels(); paint(); }
+
+  elStart.addEventListener('click', function(){
+    beep(660,0.06,0.05);
+    if(phase==='done') reset();
+    if(running){ stop(); elStart.textContent='再開'; return; }
+    if(phase==='idle') goto('ready', READY); else endAt = Date.now()+remain*1000;
+    running=true; elStart.textContent='一時停止'; wakeOn();
+    timer = setInterval(tick, 200);
+  });
+  document.getElementById('reset').addEventListener('click', reset);
+
+  function refreshToday(){
+    var n = (byDate()[todayKey()]||[]).length;
+    elToday.textContent = n ? '✓ 今日は '+n+' 回やった' : '';
+  }
+
+  // ---------- calendar ----------
+  var now = new Date(), viewY = now.getFullYear(), viewM = now.getMonth(), selKey = todayKey();
+  var elGrid = document.getElementById('grid'), elTitle = document.getElementById('calTitle'), elDetail = document.getElementById('detail');
+  document.getElementById('prevM').addEventListener('click', function(){ viewM--; if(viewM<0){viewM=11;viewY--;} renderCal(); });
+  document.getElementById('nextM').addEventListener('click', function(){ viewM++; if(viewM>11){viewM=0;viewY++;} renderCal(); });
+
+  function streak(map){
+    var d = new Date(), n = 0;
+    if(!map[dkey(d)]) d.setDate(d.getDate()-1); // 今日まだなら昨日から数える
+    while(map[dkey(d)]){ n++; d.setDate(d.getDate()-1); }
+    return n;
+  }
+  function renderCal(){
+    var map = byDate(), tk = todayKey();
+    elTitle.textContent = viewY+'年 '+(viewM+1)+'月';
+    var html = ['日','月','火','水','木','金','土'].map(function(s){ return '<div class="dow">'+s+'</div>'; }).join('');
+    var first = new Date(viewY, viewM, 1).getDay(), days = new Date(viewY, viewM+1, 0).getDate();
+    for(var i=0;i<first;i++) html += '<div class="day empty"></div>';
+    var monthDays = 0;
+    for(var d=1; d<=days; d++){
+      var k = viewY+'-'+pad(viewM+1)+'-'+pad(d), recs = map[k];
+      if(recs) monthDays++;
+      var cls = 'day'+(recs?' done':'')+(k===tk?' today':'')+(k===selKey?' sel':'');
+      var sub = recs ? '<span class="n">'+recs.reduce(function(a,r){return a+r.sets*r.hold;},0)+'s</span>' : '';
+      html += '<div class="'+cls+'" data-k="'+k+'">'+d+sub+'</div>';
+    }
+    elGrid.innerHTML = html;
+    document.getElementById('stStreak').textContent = streak(map);
+    document.getElementById('stMonth').textContent = monthDays;
+    document.getElementById('stTotal').textContent = Math.round(log.reduce(function(a,r){return a+r.sets*r.hold;},0)/60);
+    renderDetail(map);
+  }
+  elGrid.addEventListener('click', function(e){
+    var d = e.target.closest('.day'); if(!d || !d.dataset.k) return;
+    selKey = d.dataset.k; renderCal();
+  });
+  function renderDetail(map){
+    var recs = map[selKey]||[], p = selKey.split('-');
+    var h = '<h3>'+parseInt(p[1],10)+'月'+parseInt(p[2],10)+'日</h3>';
+    if(!recs.length) h += '<div class="empty-note">記録なし</div>';
+    recs.forEach(function(r){
+      var t = new Date(r.ts), tm = r.manual ? '手動' : pad(t.getHours())+':'+pad(t.getMinutes());
+      h += '<div class="rec"><span>'+r.hold+'秒 × '+r.sets+'セット（休憩'+r.rest+'秒）</span>'
+         + '<span class="t">'+tm+'</span><button class="x" data-ts="'+r.ts+'" title="削除">×</button></div>';
+    });
+    if(selKey <= todayKey()) h += '<div class="addrow"><button id="addManual">この日に '+hold+'秒×'+sets+'セット を手動で記録</button></div>';
+    elDetail.innerHTML = h;
+    var am = document.getElementById('addManual');
+    if(am) am.addEventListener('click', function(){
+      var p = selKey.split('-'), t = new Date(+p[0], p[1]-1, +p[2], 12, 0, 0).getTime();
+      addRecord({ts:t, date:selKey, hold:hold, sets:sets, rest:rest, manual:true});
+    });
+  }
+  elDetail.addEventListener('click', function(e){
+    var b = e.target.closest('.x'); if(!b) return;
+    if(!confirm('この記録を削除しますか？')) return;
+    var ts = +b.dataset.ts; log = log.filter(function(r){ return r.ts!==ts; });
+    save(LS_LOG, log); refreshToday(); renderCal();
+  });
+
+  reset(); refreshToday(); renderCal();
+
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+})();
+</script>
+</body>
+</html>
