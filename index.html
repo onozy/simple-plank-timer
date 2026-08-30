@@ -124,6 +124,10 @@
       <div class="seg" id="segRest">
         <button data-v="20">20秒</button><button data-v="30" class="on">30秒</button><button data-v="45">45秒</button>
       </div></div>
+    <div class="row"><span class="lbl">音</span>
+      <div class="seg" id="segSound">
+        <button data-v="1" class="on">ON</button><button data-v="0">OFF</button><button data-v="-1" id="soundTest">🔊 テスト</button>
+      </div></div>
   </div>
 
   <div class="stage">
@@ -173,6 +177,11 @@
     <div class="grid" id="grid"></div>
   </div>
   <div class="detail" id="detail"></div>
+  <div class="detail">
+    <h3>バックアップ</h3>
+    <div class="empty-note" style="margin-bottom:8px">記録はこのスマホの中に保存されます。アプリを更新しても消えませんが、機種変更や念のための保存に。</div>
+    <div class="addrow"><button id="exportBtn">書き出す（コピー/共有）</button><button id="importBtn">読み込む</button></div>
+  </div>
 </div>
 
 <script>
@@ -210,18 +219,36 @@
       elStart = document.getElementById('start'), elToday = document.getElementById('todayNote');
   var timer = null, running = false, phase = 'idle', remain = 0, total = 0, curSet = 0, endAt = 0;
 
-  var ac = null;
-  function beep(freq, dur, vol){
+  var soundOn = settings.sound !== 0;
+  var ac = null, unmuted = false;
+  // iOSのマナーモード対策：無音の<audio>を再生してオーディオセッションを再生モードにする
+  function unmuteIOS(){
+    if(unmuted) return; unmuted = true;
     try{
-      if(!ac){ var C = window.AudioContext || window.webkitAudioContext; if(!C) return; ac = new C(); }
-      if(ac.state === 'suspended') ac.resume();
-      var o = ac.createOscillator(), g = ac.createGain();
-      o.type='sine'; o.frequency.value=freq; g.gain.value=vol||0.18;
-      o.connect(g); g.connect(ac.destination);
-      var t = ac.currentTime; o.start(t);
-      g.gain.setValueAtTime(g.gain.value, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t+(dur||0.15));
-      o.stop(t+(dur||0.15)+0.02);
+      var a = document.createElement('audio'); a.setAttribute('playsinline',''); a.loop = true; a.volume = 0.01;
+      a.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+      a.play().catch(function(){});
+    }catch(e){}
+  }
+  function ensureAC(){
+    if(!ac){ var C = window.AudioContext || window.webkitAudioContext; if(!C) return null; ac = new C(); }
+    if(ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+  function beep(freq, dur, vol){
+    if(!soundOn) return;
+    try{
+      var c = ensureAC(); if(!c) return;
+      dur = dur || 0.15; vol = (vol || 0.18) * 2.2; if(vol > 0.9) vol = 0.9;
+      var t = c.currentTime;
+      [0, 2].forEach(function(mul, i){ // 基音 + 2倍音でスマホのスピーカーでも聞こえやすく
+        var o = c.createOscillator(), g = c.createGain();
+        o.type = i ? 'triangle' : 'square'; o.frequency.value = freq * (mul || 1);
+        g.gain.value = i ? vol * 0.35 : vol;
+        o.connect(g); g.connect(c.destination);
+        o.start(t); g.gain.setValueAtTime(g.gain.value, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.stop(t + dur + 0.02);
+      });
     }catch(e){}
   }
   function buzz(ms){ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} }
@@ -238,12 +265,24 @@
       var b = e.target.closest('button'); if(!b) return;
       [].forEach.call(box.querySelectorAll('button'), function(x){ x.classList.remove('on'); });
       b.classList.add('on'); cb(parseInt(b.dataset.v,10));
-      save(LS_SET, {hold:hold, sets:sets, rest:rest}); reset();
+      save(LS_SET, {hold:hold, sets:sets, rest:rest, sound: soundOn?1:0}); reset();
     });
   }
   seg('segHold', hold, function(v){ hold=v; });
   seg('segSets', sets, function(v){ sets=v; });
   seg('segRest', rest, function(v){ rest=v; });
+  (function(){
+    var box = document.getElementById('segSound');
+    [].forEach.call(box.querySelectorAll('button[data-v="1"],button[data-v="0"]'), function(x){ x.classList.toggle('on', (x.dataset.v==='1')===soundOn); });
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      if(b.id === 'soundTest'){ unmuteIOS(); var was = soundOn; soundOn = true; beep(1000,0.3,0.22); setTimeout(function(){ beep(1200,0.5,0.25); }, 350); soundOn = was; return; }
+      soundOn = b.dataset.v === '1';
+      [].forEach.call(box.querySelectorAll('button[data-v="1"],button[data-v="0"]'), function(x){ x.classList.toggle('on', x===b); });
+      save(LS_SET, {hold:hold, sets:sets, rest:rest, sound: soundOn?1:0});
+      if(soundOn){ unmuteIOS(); beep(880,0.15,0.2); }
+    });
+  })();
 
   function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
   function paint(){
@@ -285,7 +324,7 @@
   function reset(){ stop(); phase='idle'; curSet=0; remain=hold; total=hold; elStart.textContent='スタート'; setLabels(); paint(); }
 
   elStart.addEventListener('click', function(){
-    beep(660,0.06,0.05);
+    unmuteIOS(); beep(660,0.06,0.05);
     if(phase==='done') reset();
     if(running){ stop(); elStart.textContent='再開'; return; }
     if(phase==='idle') goto('ready', READY); else endAt = Date.now()+remain*1000;
@@ -357,6 +396,27 @@
     if(!confirm('この記録を削除しますか？')) return;
     var ts = +b.dataset.ts; log = log.filter(function(r){ return r.ts!==ts; });
     save(LS_LOG, log); refreshToday(); renderCal();
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', function(){
+    var txt = JSON.stringify({app:'plank', v:1, log:log});
+    if(navigator.share){ navigator.share({title:'プランク記録', text:txt}).catch(function(){ copyText(txt); }); }
+    else copyText(txt);
+  });
+  function copyText(t){
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function(){ alert('コピーしました。メモなどに貼り付けて保存してください。'); }, function(){ prompt('この内容をコピーして保存してください', t); });
+    else prompt('この内容をコピーして保存してください', t);
+  }
+  document.getElementById('importBtn').addEventListener('click', function(){
+    var t = prompt('書き出した内容を貼り付けてください'); if(!t) return;
+    try{
+      var o = JSON.parse(t), arr = Array.isArray(o) ? o : o.log;
+      if(!Array.isArray(arr)) throw 0;
+      var seen = {}; log.forEach(function(r){ seen[r.ts]=1; }); var n=0;
+      arr.forEach(function(r){ if(r && r.ts && r.date && !seen[r.ts]){ log.push(r); seen[r.ts]=1; n++; } });
+      log.sort(function(a,b){ return a.ts-b.ts; }); save(LS_LOG, log); refreshToday(); renderCal();
+      alert(n+'件の記録を追加しました');
+    }catch(e){ alert('読み込めませんでした。書き出した内容をそのまま貼り付けてください。'); }
   });
 
   reset(); refreshToday(); renderCal();
