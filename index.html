@@ -42,15 +42,30 @@
     font-size:14px;padding:8px 13px;border-radius:10px;cursor:pointer;font-variant-numeric:tabular-nums;font-family:inherit}
   .seg button.on{background:var(--accent);border-color:var(--accent);color:#0d1117;font-weight:700}
 
+  /* プラン選択 */
+  .planwrap{display:flex;flex-direction:column;gap:8px}
+  .seg.wrap{flex-wrap:wrap}
+  .seg.wrap button{flex:1 1 auto;min-width:74px;font-size:13px;padding:8px 6px;text-align:center}
+  .menu{background:#171a21;border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+    font-size:13px;line-height:1.7;color:var(--ink)}
+  .menu .mrow{display:flex;gap:8px}
+  .menu .mrow span:first-child{color:var(--muted);flex:0 0 auto}
+  .menu .mtot{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+  .hidden{display:none !important}
+
   .stage{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:14px}
   .dial{position:relative;width:min(76vw,300px);aspect-ratio:1}
   .dial svg{width:100%;height:100%;transform:rotate(-90deg)}
   .track{fill:none;stroke:#242936;stroke-width:12}
   .prog{fill:none;stroke:var(--accent);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .25s linear,stroke .3s}
-  .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0 14px;text-align:center}
   .phase{font-size:15px;font-weight:600;letter-spacing:.08em;color:var(--accent);transition:color .3s}
   .time{font-size:64px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
-  .sets{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .sets{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.5}
+  .steps{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;max-width:420px}
+  .pip{width:22px;height:5px;border-radius:3px;background:#242936}
+  .pip.on{background:var(--accent)}
+  .pip.cur{background:var(--ink)}
 
   .controls{display:flex;gap:10px;width:100%;max-width:420px}
   .btn{flex:1;border:none;border-radius:14px;padding:16px 0;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
@@ -62,6 +77,7 @@
   .tip b{color:var(--ink);font-weight:600;display:block;margin-bottom:6px;font-size:13px}
   .tip ul{margin:0;padding-left:18px}
   .tip li{margin:2px 0}
+  .tip .sub{color:var(--ink);font-weight:600;display:block;margin:10px 0 4px;font-size:12px}
   .finish{color:var(--done);font-weight:700}
   .today{font-size:13px;color:var(--done);min-height:18px}
 
@@ -90,8 +106,8 @@
   .detail h3{margin:0 0 8px;font-size:14px;font-weight:600}
   .rec{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);gap:8px}
   .rec:first-of-type{border-top:none}
-  .rec .t{color:var(--muted);font-variant-numeric:tabular-nums}
-  .rec .x{background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px}
+  .rec .t{color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
+  .rec .x{background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;flex:0 0 auto}
   .empty-note{color:var(--muted)}
   .addrow{display:flex;gap:8px;margin-top:10px}
   .addrow button{flex:1;background:#252a35;border:1px solid var(--line);color:var(--ink);padding:10px;border-radius:10px;
@@ -110,16 +126,25 @@
 <!-- ===== タイマー ===== -->
 <div class="view on" id="view-timer">
   <div class="settings">
-    <div class="row"><span class="lbl">キープ時間</span>
-      <div class="seg" id="segHold">
-        <button data-v="20">20秒</button><button data-v="30" class="on">30秒</button>
-        <button data-v="45">45秒</button><button data-v="60">60秒</button>
-      </div></div>
-    <div class="row"><span class="lbl">セット数</span>
-      <div class="seg" id="segSets">
-        <button data-v="1">1</button><button data-v="2">2</button>
-        <button data-v="3" class="on">3</button><button data-v="4">4</button>
-      </div></div>
+    <div class="planwrap">
+      <span class="lbl">プラン</span>
+      <div class="seg wrap" id="segPlan"></div>
+      <div class="menu" id="planMenu"></div>
+    </div>
+
+    <div id="customRows" class="hidden" style="display:flex;flex-direction:column;gap:12px">
+      <div class="row"><span class="lbl">キープ時間</span>
+        <div class="seg" id="segHold">
+          <button data-v="20">20秒</button><button data-v="30" class="on">30秒</button>
+          <button data-v="45">45秒</button><button data-v="60">60秒</button>
+        </div></div>
+      <div class="row"><span class="lbl">セット数</span>
+        <div class="seg" id="segSets">
+          <button data-v="1">1</button><button data-v="2">2</button>
+          <button data-v="3" class="on">3</button><button data-v="4">4</button>
+        </div></div>
+    </div>
+
     <div class="row"><span class="lbl">休憩</span>
       <div class="seg" id="segRest">
         <button data-v="20">20秒</button><button data-v="30" class="on">30秒</button><button data-v="45">45秒</button>
@@ -142,6 +167,7 @@
         <div class="sets" id="setinfo">3セット / 30秒</div>
       </div>
     </div>
+    <div class="steps" id="pips"></div>
     <div class="today" id="todayNote"></div>
     <div class="controls">
       <button class="btn primary" id="start">スタート</button>
@@ -157,6 +183,12 @@
       <li>お腹を薄くするイメージで下腹に力を</li>
       <li>呼吸は止めない。ゆっくり吸って吐く</li>
       <li>腰が痛むときは膝をついてOK</li>
+    </ul>
+    <span class="sub">サイドプランク</span>
+    <ul>
+      <li>肘は肩の真下。体は横から見て一直線</li>
+      <li>腰が落ちないよう、下側の脇腹で押し上げる</li>
+      <li>きついときは下の膝を曲げて支えてOK</li>
     </ul>
   </div>
 </div>
@@ -189,18 +221,68 @@
   var CIRC = 2 * Math.PI * 52, READY = 5;
   var LS_SET = 'plank.settings', LS_LOG = 'plank.log';
 
+  // ---------- プラン定義 ----------
+  // steps: [{name, hold, sets}] を上から順に実行。セットの間はすべて「休憩」設定の秒数。
+  var PLANS = [
+    {id:'w1',   label:'Week 1', desc:'フロント30秒 × 3セット',
+     steps:[{name:'フロントプランク', hold:30, sets:3}]},
+    {id:'w2',   label:'Week 2', desc:'フロント45秒 × 3セット',
+     steps:[{name:'フロントプランク', hold:45, sets:3}]},
+    {id:'w3',   label:'Week 3', desc:'フロント60秒 × 3セット',
+     steps:[{name:'フロントプランク', hold:60, sets:3}]},
+    {id:'w4',   label:'Week 4', desc:'フロント60秒×2 ＋ サイド20秒×左右',
+     steps:[{name:'フロントプランク', hold:60, sets:2},
+            {name:'サイドプランク（左）', hold:20, sets:1},
+            {name:'サイドプランク（右）', hold:20, sets:1}]},
+    {id:'keep', label:'維持',    desc:'フロント60秒×3 ＋ サイド30秒×左右',
+     steps:[{name:'フロントプランク', hold:60, sets:3},
+            {name:'サイドプランク（左）', hold:30, sets:1},
+            {name:'サイドプランク（右）', hold:30, sets:1}]},
+    {id:'custom', label:'カスタム', desc:'', steps:null}
+  ];
+  function planById(id){
+    for(var i=0;i<PLANS.length;i++) if(PLANS[i].id===id) return PLANS[i];
+    return PLANS[PLANS.length-1];
+  }
+
   // ---------- storage ----------
   function load(k, d){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
   function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
-  var settings = load(LS_SET, {hold:30, sets:3, rest:30});
-  var hold = settings.hold, sets = settings.sets, rest = settings.rest;
-  var log = load(LS_LOG, []); // [{ts, date:'YYYY-MM-DD', hold, sets, rest}]
+  var settings = load(LS_SET, {});
+  var hold = settings.hold || 30, sets = settings.sets || 3, rest = settings.rest || 30;
+  var planId = settings.plan || 'w4';
+  var log = load(LS_LOG, []); // [{ts, date:'YYYY-MM-DD', total, label, plan, hold, sets, rest}]
+
+  function saveSettings(){ save(LS_SET, {hold:hold, sets:sets, rest:rest, sound: soundOn?1:0, plan:planId}); }
 
   function pad(n){ return (n<10?'0':'')+n; }
   function dkey(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
   function todayKey(){ return dkey(new Date()); }
   function byDate(){ var m = {}; log.forEach(function(r){ (m[r.date] = m[r.date] || []).push(r); }); return m; }
+  function secOf(r){ return r.total || (r.sets||0) * (r.hold||0); } // 旧データ互換
+  function labelOf(r){ return r.label || ((r.hold||0)+'秒 × '+(r.sets||0)+'セット'); }
   function addRecord(rec){ log.push(rec); log.sort(function(a,b){ return a.ts-b.ts; }); save(LS_LOG, log); refreshToday(); renderCal(); }
+
+  // ---------- 現在のプラン → 実行シーケンス ----------
+  function curSteps(){
+    var p = planById(planId);
+    return p.steps ? p.steps : [{name:'プランク', hold:hold, sets:sets}];
+  }
+  function curDesc(){
+    var p = planById(planId);
+    return p.steps ? p.desc : (hold+'秒 × '+sets+'セット');
+  }
+  var seq = [];
+  function buildSeq(){
+    seq = [];
+    curSteps().forEach(function(st){
+      for(var i=1;i<=st.sets;i++) seq.push({name:st.name, hold:st.hold, setIdx:i, setTotal:st.sets});
+    });
+    return seq;
+  }
+  function totalHoldSec(){ return seq.reduce(function(a,s){ return a+s.hold; }, 0); }
+  function wholeSec(){ return READY + totalHoldSec() + rest*Math.max(0, seq.length-1); }
+  function mmss(s){ var m=Math.floor(s/60), r=s%60; return m? (m+'分'+(r?r+'秒':'')) : (r+'秒'); }
 
   // ---------- tabs ----------
   var tabs = document.querySelectorAll('.tabs button');
@@ -216,8 +298,9 @@
   // ---------- timer ----------
   var elTime = document.getElementById('time'), elPhase = document.getElementById('phase'),
       elSetInfo = document.getElementById('setinfo'), elProg = document.getElementById('prog'),
-      elStart = document.getElementById('start'), elToday = document.getElementById('todayNote');
-  var timer = null, running = false, phase = 'idle', remain = 0, total = 0, curSet = 0, endAt = 0;
+      elStart = document.getElementById('start'), elToday = document.getElementById('todayNote'),
+      elPips = document.getElementById('pips');
+  var timer = null, running = false, phase = 'idle', remain = 0, total = 0, idx = 0, endAt = 0;
 
   var soundOn = settings.sound !== 0;
   var ac = null, unmuted = false;
@@ -252,11 +335,35 @@
     }catch(e){}
   }
   function buzz(ms){ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} }
+  // 種目が切り替わるタイミングは音を変えて知らせる（左→右の入れ替えなど）
+  function switchBeep(){ beep(1000,0.25,0.22); setTimeout(function(){ beep(1400,0.3,0.24); }, 260); }
 
   var wl = null;
   function wakeOn(){ if('wakeLock' in navigator && !wl) navigator.wakeLock.request('screen').then(function(l){ wl=l; l.addEventListener('release', function(){ wl=null; }); }).catch(function(){}); }
   function wakeOff(){ if(wl){ wl.release().catch(function(){}); wl=null; } }
   document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible' && running) wakeOn(); });
+
+  // プラン選択
+  (function(){
+    var box = document.getElementById('segPlan');
+    box.innerHTML = PLANS.map(function(p){ return '<button data-p="'+p.id+'">'+p.label+'</button>'; }).join('');
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      planId = b.dataset.p; saveSettings(); syncPlanUI(); reset();
+    });
+  })();
+  function syncPlanUI(){
+    var box = document.getElementById('segPlan');
+    [].forEach.call(box.querySelectorAll('button'), function(x){ x.classList.toggle('on', x.dataset.p===planId); });
+    document.getElementById('customRows').classList.toggle('hidden', planId!=='custom');
+    var steps = curSteps(), n = ['①','②','③','④','⑤','⑥'];
+    var html = steps.map(function(s,i){
+      return '<div class="mrow"><span>'+(n[i]||(i+1))+'</span><span>'+s.name+' '+s.hold+'秒 × '+s.sets+'セット</span></div>';
+    }).join('');
+    buildSeq();
+    html += '<div class="mtot">キープ合計 '+totalHoldSec()+'秒／休憩'+rest+'秒 × '+Math.max(0,seq.length-1)+'回　所要 約'+mmss(wholeSec())+'</div>';
+    document.getElementById('planMenu').innerHTML = html;
+  }
 
   function seg(id, val, cb){
     var box = document.getElementById(id);
@@ -265,7 +372,7 @@
       var b = e.target.closest('button'); if(!b) return;
       [].forEach.call(box.querySelectorAll('button'), function(x){ x.classList.remove('on'); });
       b.classList.add('on'); cb(parseInt(b.dataset.v,10));
-      save(LS_SET, {hold:hold, sets:sets, rest:rest, sound: soundOn?1:0}); reset();
+      saveSettings(); syncPlanUI(); reset();
     });
   }
   seg('segHold', hold, function(v){ hold=v; });
@@ -279,7 +386,7 @@
       if(b.id === 'soundTest'){ unmuteIOS(); var was = soundOn; soundOn = true; beep(1000,0.3,0.22); setTimeout(function(){ beep(1200,0.5,0.25); }, 350); soundOn = was; return; }
       soundOn = b.dataset.v === '1';
       [].forEach.call(box.querySelectorAll('button[data-v="1"],button[data-v="0"]'), function(x){ x.classList.toggle('on', x===b); });
-      save(LS_SET, {hold:hold, sets:sets, rest:rest, sound: soundOn?1:0});
+      saveSettings();
       if(soundOn){ unmuteIOS(); beep(880,0.15,0.2); }
     });
   })();
@@ -292,15 +399,33 @@
     var color = phase==='rest'?getCss('--rest'):phase==='ready'?getCss('--ready'):phase==='done'?getCss('--done'):getCss('--accent');
     elProg.style.stroke = color; elPhase.style.color = color;
   }
+  function stepText(i){
+    var s = seq[i]; if(!s) return '';
+    return s.name + (s.setTotal>1 ? ' '+s.setIdx+'/'+s.setTotal+'セット' : '');
+  }
+  function renderPips(){
+    elPips.innerHTML = seq.map(function(s,i){
+      var cls = 'pip' + (phase==='done' ? ' on' : (i<idx ? ' on' : (i===idx && (phase==='hold') ? ' cur' : '')));
+      return '<div class="'+cls+'"></div>';
+    }).join('');
+  }
   function setLabels(){
     elPhase.textContent = phase==='ready'?'よーい':phase==='hold'?'キープ！':phase==='rest'?'休憩':phase==='done'?'おつかれさま':'準備OK？';
     elPhase.classList.toggle('finish', phase==='done');
-    if(phase==='hold'||phase==='rest') elSetInfo.textContent = curSet+' / '+sets+' セット目';
-    else if(phase==='done') elSetInfo.textContent = sets+'セット完了 🎉';
-    else elSetInfo.textContent = sets+'セット / '+hold+'秒';
+    if(phase==='hold') elSetInfo.textContent = stepText(idx);
+    else if(phase==='rest') elSetInfo.textContent = '次： '+stepText(idx+1);
+    else if(phase==='ready') elSetInfo.textContent = stepText(0);
+    else if(phase==='done') elSetInfo.textContent = curDesc()+' 完了 🎉';
+    else elSetInfo.textContent = curDesc();
+    renderPips();
   }
   function goto(p, secs){ phase=p; remain=secs; total=secs; endAt = Date.now()+secs*1000; setLabels(); paint(); }
 
+  function finish(){
+    beep(1200,0.5,0.25); buzz([120,80,220]); goto('done',0); stop(); elStart.textContent='もう一度';
+    addRecord({ts:Date.now(), date:todayKey(), plan:planId, label:curDesc(),
+               total:totalHoldSec(), rest:rest, hold:hold, sets:sets});
+  }
   function tick(){
     // 実時間ベース（バックグラウンドでの遅れを補正）
     var r = Math.ceil((endAt - Date.now())/1000);
@@ -308,20 +433,28 @@
     remain = r;
     if(remain>0 && remain<=3) beep(760, 0.1);
     if(remain<=0){
-      if(phase==='ready'){ curSet=1; beep(1000,0.3,0.22); buzz(120); goto('hold', hold); }
+      if(phase==='ready'){ idx=0; beep(1000,0.3,0.22); buzz(120); goto('hold', seq[0].hold); }
       else if(phase==='hold'){
-        if(curSet>=sets){
-          beep(1200,0.5,0.25); buzz([120,80,220]); goto('done',0); stop(); elStart.textContent='もう一度';
-          addRecord({ts:Date.now(), date:todayKey(), hold:hold, sets:sets, rest:rest});
-        } else { beep(520,0.3,0.2); buzz(80); goto('rest', rest); }
+        if(idx >= seq.length-1){ finish(); }
+        else { beep(520,0.3,0.2); buzz(80); goto('rest', rest); }
       }
-      else if(phase==='rest'){ curSet++; beep(1000,0.3,0.22); buzz(120); goto('hold', hold); }
+      else if(phase==='rest'){
+        idx++;
+        // 種目が変わる休憩明けは音を変えて知らせる
+        if(seq[idx] && seq[idx-1] && seq[idx].name !== seq[idx-1].name){ switchBeep(); buzz([100,60,100]); }
+        else { beep(1000,0.3,0.22); buzz(120); }
+        goto('hold', seq[idx].hold);
+      }
       return;
     }
     paint();
   }
   function stop(){ clearInterval(timer); timer=null; running=false; wakeOff(); }
-  function reset(){ stop(); phase='idle'; curSet=0; remain=hold; total=hold; elStart.textContent='スタート'; setLabels(); paint(); }
+  function reset(){
+    stop(); buildSeq(); phase='idle'; idx=0;
+    remain = seq.length ? seq[0].hold : hold; total = remain;
+    elStart.textContent='スタート'; setLabels(); paint();
+  }
 
   elStart.addEventListener('click', function(){
     unmuteIOS(); beep(660,0.06,0.05);
@@ -361,13 +494,13 @@
       var k = viewY+'-'+pad(viewM+1)+'-'+pad(d), recs = map[k];
       if(recs) monthDays++;
       var cls = 'day'+(recs?' done':'')+(k===tk?' today':'')+(k===selKey?' sel':'');
-      var sub = recs ? '<span class="n">'+recs.reduce(function(a,r){return a+r.sets*r.hold;},0)+'s</span>' : '';
+      var sub = recs ? '<span class="n">'+recs.reduce(function(a,r){return a+secOf(r);},0)+'s</span>' : '';
       html += '<div class="'+cls+'" data-k="'+k+'">'+d+sub+'</div>';
     }
     elGrid.innerHTML = html;
     document.getElementById('stStreak').textContent = streak(map);
     document.getElementById('stMonth').textContent = monthDays;
-    document.getElementById('stTotal').textContent = Math.round(log.reduce(function(a,r){return a+r.sets*r.hold;},0)/60);
+    document.getElementById('stTotal').textContent = Math.round(log.reduce(function(a,r){return a+secOf(r);},0)/60);
     renderDetail(map);
   }
   elGrid.addEventListener('click', function(e){
@@ -380,15 +513,16 @@
     if(!recs.length) h += '<div class="empty-note">記録なし</div>';
     recs.forEach(function(r){
       var t = new Date(r.ts), tm = r.manual ? '手動' : pad(t.getHours())+':'+pad(t.getMinutes());
-      h += '<div class="rec"><span>'+r.hold+'秒 × '+r.sets+'セット（休憩'+r.rest+'秒）</span>'
+      h += '<div class="rec"><span>'+labelOf(r)+'</span>'
          + '<span class="t">'+tm+'</span><button class="x" data-ts="'+r.ts+'" title="削除">×</button></div>';
     });
-    if(selKey <= todayKey()) h += '<div class="addrow"><button id="addManual">この日に '+hold+'秒×'+sets+'セット を手動で記録</button></div>';
+    if(selKey <= todayKey()) h += '<div class="addrow"><button id="addManual">この日に「'+curDesc()+'」を手動で記録</button></div>';
     elDetail.innerHTML = h;
     var am = document.getElementById('addManual');
     if(am) am.addEventListener('click', function(){
-      var p = selKey.split('-'), t = new Date(+p[0], p[1]-1, +p[2], 12, 0, 0).getTime();
-      addRecord({ts:t, date:selKey, hold:hold, sets:sets, rest:rest, manual:true});
+      var q = selKey.split('-'), t = new Date(+q[0], q[1]-1, +q[2], 12, 0, 0).getTime();
+      addRecord({ts:t, date:selKey, plan:planId, label:curDesc(), total:totalHoldSec(),
+                 rest:rest, hold:hold, sets:sets, manual:true});
     });
   }
   elDetail.addEventListener('click', function(e){
@@ -419,7 +553,7 @@
     }catch(e){ alert('読み込めませんでした。書き出した内容をそのまま貼り付けてください。'); }
   });
 
-  reset(); refreshToday(); renderCal();
+  syncPlanUI(); reset(); refreshToday(); renderCal(); saveSettings();
 
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
 })();
